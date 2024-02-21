@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "net.touhoudiscord.mixin",
+	"compatibilityLevel": "JAVA_17",
+	"mixins": [
+		"RedeployingMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

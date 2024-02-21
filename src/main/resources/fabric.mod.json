@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "hardcore-redeploy",
+	"version": "${version}",
+	"name": "Hardcore Redeploy",
+	"description": "A mod that allows reviving players in hardcore servers, at a cost",
+	"authors": [
+		"Hexugory",
+		"Kaptcha"
+	],
+	"contact": {
+		"homepage": "",
+		"sources": "https://git.touhoudiscord.net/Hexugory/HardcoreRedeploy"
+	},
+	"license": "LGPL-3.0",
+	"icon": "assets/hardcore-redeploy/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.touhoudiscord.HardcoreRedeploy"
+		],
+		"client": [
+			"net.touhoudiscord.HardcoreRedeployClient"
+		]
+	},
+	"mixins": [
+		"hardcore-redeploy.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.14.25",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
