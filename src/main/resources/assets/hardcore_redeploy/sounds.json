@@ -1,0 +1,8 @@
+{
+  "buy_station": {
+    "subtitle": "subtitles.hardcore_redeploy.buy_station",
+    "sounds": [
+      "hardcore_redeploy:buy_station"
+    ]
+  }
+}

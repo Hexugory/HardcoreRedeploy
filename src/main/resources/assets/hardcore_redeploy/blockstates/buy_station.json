@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "hardcore_redeploy:block/buy_station" }
+  }
+}

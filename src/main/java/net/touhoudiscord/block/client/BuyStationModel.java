@@ -1,10 +1,13 @@
 package net.touhoudiscord.block.client;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.util.Identifier;
 import net.touhoudiscord.HardcoreRedeploy;
 import net.touhoudiscord.block.BuyStationEntity;
 import software.bernie.geckolib.model.GeoModel;
 
+@Environment(EnvType.CLIENT)
 public class BuyStationModel extends GeoModel<BuyStationEntity> {
     @Override
     public Identifier getModelResource(BuyStationEntity animatable) {

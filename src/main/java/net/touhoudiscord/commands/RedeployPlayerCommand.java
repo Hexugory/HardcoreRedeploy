@@ -8,10 +8,10 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.world.GameMode;
-import net.touhoudiscord.HardcoreRedeploy;
 import net.touhoudiscord.RedeployPlayer;
 
-import static net.minecraft.server.command.CommandManager.*;
+import static net.minecraft.server.command.CommandManager.argument;
+import static net.minecraft.server.command.CommandManager.literal;
 
 public class RedeployPlayerCommand {
 
@@ -36,7 +36,5 @@ public class RedeployPlayerCommand {
 
             return 1;
         })));
-
-        HardcoreRedeploy.LOGGER.info("Registered RedeployPlayer command");
     }
 }
