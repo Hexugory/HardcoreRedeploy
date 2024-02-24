@@ -31,6 +31,7 @@ import net.minecraft.world.GameMode;
 import net.touhoudiscord.block.BuyStation;
 import net.touhoudiscord.block.BuyStationEntity;
 import net.touhoudiscord.commands.RedeployPlayerCommand;
+import net.touhoudiscord.commands.SetRevivesCommand;
 import net.touhoudiscord.item.BuyStationItem;
 import net.touhoudiscord.status.RedeployingStatusEffect;
 import org.slf4j.Logger;
@@ -116,6 +117,7 @@ public class HardcoreRedeploy implements ModInitializer {
 						HardcoreRedeploy.BUY_STATION).build());
 		Registry.register(Registries.STATUS_EFFECT, new Identifier(HardcoreRedeploy.MOD_ID, "redeploying"), REDEPLOYING);
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> RedeployPlayerCommand.register(dispatcher));
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SetRevivesCommand.register(dispatcher));
 		Registry.register(Registries.SOUND_EVENT, BUY_STATION_SOUND_ID, BUY_STATION_SOUND_EVENT);
 	}
 

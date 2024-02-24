@@ -32,7 +32,7 @@ public class RedeployPlayerCommand {
 
             ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
             RedeployPlayer.redeploy(player, context.getSource().getPlayer());
-            context.getSource().sendFeedback(() -> Text.literal("Redeployed ").append(player.getName()), false);
+            context.getSource().sendFeedback(() -> Text.literal("Redeployed ").append(player.getName()), true);
 
             return 1;
         })));
