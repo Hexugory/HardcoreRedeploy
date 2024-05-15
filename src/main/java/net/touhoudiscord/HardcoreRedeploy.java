@@ -75,32 +75,35 @@ public class HardcoreRedeploy implements ModInitializer {
 		GeckoLib.initialize();
 
 		ServerPlayNetworking.registerGlobalReceiver(REQUEST_REVIVE, (server, player, handler, buf, responseSender) -> {
-			ServerPlayerEntity spectator = server.getPlayerManager().getPlayer(buf.readUuid());
-			if (spectator == null) return;
-
+			UUID uuid = buf.readUuid();
 			BlockPos blockPos = buf.readBlockPos();
-			BlockState invokingBlock = player.getWorld().getBlockState(blockPos);
 
-			if (invokingBlock.getBlock() instanceof BuyStation && player.getPos().isInRange(blockPos.toCenterPos(), 5)) {
+			server.execute(() -> {
+				ServerPlayerEntity spectator = server.getPlayerManager().getPlayer(uuid);
+				if (spectator == null) return;
 
-				int cost = config.baseCost+config.additiveCost*RedeployStateSaver.getPlayerState(spectator).timesRevived;
-				boolean isCreative = player.interactionManager.getGameMode() == GameMode.CREATIVE;
-				if (!isCreative && player.experienceLevel < cost) return;
+				BlockState invokingBlock = player.getWorld().getBlockState(blockPos);
 
-				Vec3d fireworkPos = blockPos.toCenterPos();
-				BlockState blockState = player.getWorld().getBlockState(blockPos);
-				Direction offset = blockState.get(HorizontalFacingBlock.FACING).rotateYClockwise();
-				if (blockState.get(BUY_STATION_PART) == BuyStation.BuyStationPart.AUX) offset = offset.getOpposite();
-				FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(player.getWorld(), fireworkPos.x+offset.getOffsetX()/2., fireworkPos.y, fireworkPos.z+offset.getOffsetZ()/2., firework);
-				player.getWorld().spawnEntity(fireworkRocketEntity);
+				if (invokingBlock.getBlock() instanceof BuyStation && player.getPos().isInRange(blockPos.toCenterPos(), 5)) {
 
-				if (!isCreative) player.setExperienceLevel(player.experienceLevel-cost);
-				((TimerAccess) server).hardcoreredeploy_redeployInTicks(spectator, player, 60L);
-				server.execute(() -> {
+					int cost = config.baseCost + config.additiveCost * RedeployStateSaver.getPlayerState(spectator).timesRevived;
+					boolean isCreative = player.interactionManager.getGameMode() == GameMode.CREATIVE;
+					if (!isCreative && player.experienceLevel < cost) return;
+
+					Vec3d fireworkPos = blockPos.toCenterPos();
+					BlockState blockState = player.getWorld().getBlockState(blockPos);
+					Direction offset = blockState.get(HorizontalFacingBlock.FACING).rotateYClockwise();
+					if (blockState.get(BUY_STATION_PART) == BuyStation.BuyStationPart.AUX)
+						offset = offset.getOpposite();
+					FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(player.getWorld(), fireworkPos.x + offset.getOffsetX() / 2., fireworkPos.y, fireworkPos.z + offset.getOffsetZ() / 2., firework);
+					player.getWorld().spawnEntity(fireworkRocketEntity);
+
+					if (!isCreative) player.setExperienceLevel(player.experienceLevel - cost);
+					((TimerAccess) server).hardcoreredeploy_redeployInTicks(spectator, player, 60L);
 					PacketByteBuf buf1 = PacketByteBufs.create();
 					ServerPlayNetworking.send(spectator, SEND_REVIVE, buf1);
-				});
-			}
+				}
+			});
 		});
 
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {

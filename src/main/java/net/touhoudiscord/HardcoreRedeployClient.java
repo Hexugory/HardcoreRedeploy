@@ -23,9 +23,13 @@ public class HardcoreRedeployClient implements ClientModInitializer {
 		BlockEntityRendererFactories.register(HardcoreRedeploy.BUY_STATION_ENTITY, BuyStationRenderer::new);
 
 		ClientPlayNetworking.registerGlobalReceiver(HardcoreRedeploy.SEND_REVIVES_UPDATE, (client, handler, buf, responseSender) -> {
-			reviveMap.put(buf.readUuid(), buf.readInt());
+			UUID uuid = buf.readUuid();
+			int revives = buf.readInt();
+			client.execute(() -> {
+				reviveMap.put(uuid, revives);
 
-			HardcoreRedeploy.LOGGER.info("Synced player revives");
+				HardcoreRedeploy.LOGGER.info("Synced player revives");
+			});
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(HardcoreRedeploy.SEND_REVIVE, (client, handler, buf, responseSender) -> {
