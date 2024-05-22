@@ -1,8 +1,8 @@
 package net.touhoudiscord.item;
 
-import net.minecraft.block.Block;
-import net.minecraft.client.render.item.BuiltinModelItemRenderer;
-import net.minecraft.item.BlockItem;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.level.block.Block;
 import net.touhoudiscord.item.client.BuyStationItemRenderer;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
@@ -21,7 +21,7 @@ public class BuyStationItem extends BlockItem implements GeoItem {
     private final AnimatableInstanceCache cache = new SingletonAnimatableInstanceCache(this);
     private final Supplier<Object> renderProvider = GeoItem.makeRenderer(this);
 
-    public BuyStationItem(Block block, Settings settings) {
+    public BuyStationItem(Block block, Properties settings) {
         super(block, settings);
         SingletonGeoAnimatable.registerSyncedAnimatable(this);
     }
@@ -31,7 +31,7 @@ public class BuyStationItem extends BlockItem implements GeoItem {
         consumer.accept(new RenderProvider() {
             private final BuyStationItemRenderer renderer = new BuyStationItemRenderer();
             @Override
-            public BuiltinModelItemRenderer getCustomRenderer() {
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 return this.renderer;
             }
         });

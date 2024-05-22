@@ -1,25 +1,24 @@
 package net.touhoudiscord;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.PersistentState;
-import net.minecraft.world.PersistentStateManager;
-import net.minecraft.world.World;
-
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.storage.DimensionDataStorage;
 import java.util.HashMap;
 import java.util.UUID;
 
-public class RedeployStateSaver extends PersistentState {
+public class RedeployStateSaver extends SavedData {
 
     public HashMap<UUID, PlayerData> players = new HashMap<>();
 
     @Override
-    public NbtCompound writeNbt(NbtCompound nbt) {
+    public CompoundTag save(CompoundTag nbt) {
 
-        NbtCompound playersNbt = new NbtCompound();
+        CompoundTag playersNbt = new CompoundTag();
         players.forEach((uuid, playerData) -> {
-            NbtCompound playerNbt = new NbtCompound();
+            CompoundTag playerNbt = new CompoundTag();
 
             playerNbt.putInt("timesRevived", playerData.timesRevived);
 
@@ -30,11 +29,11 @@ public class RedeployStateSaver extends PersistentState {
         return nbt;
     }
 
-    public static RedeployStateSaver createFromNbt(NbtCompound tag) {
+    public static RedeployStateSaver createFromNbt(CompoundTag tag) {
         RedeployStateSaver state = new RedeployStateSaver();
 
-        NbtCompound playersNbt = tag.getCompound("players");
-        playersNbt.getKeys().forEach(key -> {
+        CompoundTag playersNbt = tag.getCompound("players");
+        playersNbt.getAllKeys().forEach(key -> {
             PlayerData playerData = new PlayerData();
 
             playerData.timesRevived = playersNbt.getCompound(key).getInt("timesRevived");
@@ -47,19 +46,19 @@ public class RedeployStateSaver extends PersistentState {
     }
 
     public static RedeployStateSaver getServerState(MinecraftServer server) {
-        PersistentStateManager persistentStateManager = server.getWorld(World.OVERWORLD).getPersistentStateManager();
+        DimensionDataStorage persistentStateManager = server.getLevel(Level.OVERWORLD).getDataStorage();
 
-        RedeployStateSaver state = persistentStateManager.getOrCreate(RedeployStateSaver::createFromNbt, RedeployStateSaver::new, HardcoreRedeploy.MOD_ID);
+        RedeployStateSaver state = persistentStateManager.computeIfAbsent(RedeployStateSaver::createFromNbt, RedeployStateSaver::new, HardcoreRedeploy.MOD_ID);
 
-        state.markDirty();
+        state.setDirty();
 
         return state;
     }
 
     public static PlayerData getPlayerState(LivingEntity player) {
-        RedeployStateSaver serverState = getServerState(player.getWorld().getServer());
+        RedeployStateSaver serverState = getServerState(player.level().getServer());
 
-        PlayerData playerState = serverState.players.computeIfAbsent(player.getUuid(), uuid -> new PlayerData());
+        PlayerData playerState = serverState.players.computeIfAbsent(player.getUUID(), uuid -> new PlayerData());
 
         return playerState;
     }

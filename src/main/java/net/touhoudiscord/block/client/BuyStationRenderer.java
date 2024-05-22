@@ -1,27 +1,27 @@
 package net.touhoudiscord.block.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Direction;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.touhoudiscord.block.BuyStationEntity;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
 import software.bernie.geckolib.renderer.GeoBlockRenderer;
 
 @Environment(EnvType.CLIENT)
 public class BuyStationRenderer extends GeoBlockRenderer<BuyStationEntity> {
-    public BuyStationRenderer(BlockEntityRendererFactory.Context context) {
+    public BuyStationRenderer(BlockEntityRendererProvider.Context context) {
         super(new BuyStationModel());
     }
 
     @Override
-    public void preRender(MatrixStack poseStack, BuyStationEntity animatable, BakedGeoModel model, VertexConsumerProvider bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        Direction direction = animatable.getCachedState().get(HorizontalFacingBlock.FACING).rotateYClockwise();
-        poseStack.translate(direction.getOffsetX()/2., 0, direction.getOffsetZ()/2.);
+    public void preRender(PoseStack poseStack, BuyStationEntity animatable, BakedGeoModel model, MultiBufferSource bufferSource, VertexConsumer buffer, boolean isReRender, float partialTick, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+        Direction direction = animatable.getBlockState().getValue(HorizontalDirectionalBlock.FACING).getClockWise();
+        poseStack.translate(direction.getStepX()/2., 0, direction.getStepZ()/2.);
         super.preRender(poseStack, animatable, model, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, red, green, blue, alpha);
     }
 }

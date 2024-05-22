@@ -1,11 +1,11 @@
 package net.touhoudiscord.block;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.touhoudiscord.HardcoreRedeploy;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
@@ -29,8 +29,8 @@ public class BuyStationEntity extends BlockEntity implements GeoBlockEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "buystationcontroller", 0, state -> {
-            Vec3d pos = state.getAnimatable().getPos().toCenterPos();
-            if (state.getAnimatable().getWorld().getClosestPlayer(pos.x, pos.y, pos.z, 5, false) instanceof PlayerEntity) {
+            Vec3 pos = state.getAnimatable().getBlockPos().getCenter();
+            if (state.getAnimatable().getLevel().getNearestPlayer(pos.x, pos.y, pos.z, 5, false) instanceof Player) {
                 return state.setAndContinue(OPEN);
             }
             else {
@@ -38,10 +38,10 @@ public class BuyStationEntity extends BlockEntity implements GeoBlockEntity {
             }
         })
                 .setSoundKeyframeHandler(event -> {
-                    PlayerEntity player = ClientUtils.getClientPlayer();
+                    Player player = ClientUtils.getClientPlayer();
 
                     if (player != null) {
-                        player.getWorld().playSound(player, this.getPos(), HardcoreRedeploy.BUY_STATION_SOUND_EVENT, SoundCategory.BLOCKS, 1, 1);
+                        player.level().playSound(player, this.getBlockPos(), HardcoreRedeploy.BUY_STATION_SOUND_EVENT, SoundSource.BLOCKS, 1, 1);
                     }
                 }));
     }

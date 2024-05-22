@@ -8,26 +8,26 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.projectile.FireworkRocketEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.touhoudiscord.block.BuyStation;
 import net.touhoudiscord.block.BuyStationEntity;
 import net.touhoudiscord.commands.RedeployPlayerCommand;
@@ -47,24 +47,24 @@ public class HardcoreRedeploy implements ModInitializer {
 	public static final String MOD_ID = "hardcore_redeploy";
     public static final Logger LOGGER = LoggerFactory.getLogger("hardcore_redeploy");
 
-	public static final StatusEffect REDEPLOYING = new RedeployingStatusEffect();
-	public static final Block BUY_STATION = Registry.register(Registries.BLOCK, new Identifier(HardcoreRedeploy.MOD_ID, "buy_station"), new BuyStation(FabricBlockSettings.create().nonOpaque().requiresTool().resistance(6).hardness(3)));
-	public static final Item BUY_STATION_ITEM = Registry.register(Registries.ITEM, new Identifier(HardcoreRedeploy.MOD_ID, "buy_station"), new BuyStationItem(HardcoreRedeploy.BUY_STATION, new FabricItemSettings()));
-	public static final Identifier BUY_STATION_SOUND_ID = new Identifier(HardcoreRedeploy.MOD_ID, "buy_station");
-	public static SoundEvent BUY_STATION_SOUND_EVENT = SoundEvent.of(BUY_STATION_SOUND_ID);
+	public static final MobEffect REDEPLOYING = new RedeployingStatusEffect();
+	public static final Block BUY_STATION = Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(HardcoreRedeploy.MOD_ID, "buy_station"), new BuyStation(FabricBlockSettings.of().noOcclusion().requiresCorrectToolForDrops().explosionResistance(6).destroyTime(3)));
+	public static final Item BUY_STATION_ITEM = Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(HardcoreRedeploy.MOD_ID, "buy_station"), new BuyStationItem(HardcoreRedeploy.BUY_STATION, new FabricItemSettings()));
+	public static final ResourceLocation BUY_STATION_SOUND_ID = new ResourceLocation(HardcoreRedeploy.MOD_ID, "buy_station");
+	public static SoundEvent BUY_STATION_SOUND_EVENT = SoundEvent.createVariableRangeEvent(BUY_STATION_SOUND_ID);
 	public static BlockEntityType<BuyStationEntity> BUY_STATION_ENTITY;
 
-	public static final Identifier SEND_REVIVES_UPDATE = new Identifier(HardcoreRedeploy.MOD_ID, "send_revives_update");
-	public static final Identifier REQUEST_REVIVE = new Identifier(HardcoreRedeploy.MOD_ID, "request_revive");
-	public static final Identifier SEND_REVIVE = new Identifier(HardcoreRedeploy.MOD_ID, "send_revive");
-	public static final Identifier SYNC_CONFIG = new Identifier(HardcoreRedeploy.MOD_ID, "sync_config");
+	public static final ResourceLocation SEND_REVIVES_UPDATE = new ResourceLocation(HardcoreRedeploy.MOD_ID, "send_revives_update");
+	public static final ResourceLocation REQUEST_REVIVE = new ResourceLocation(HardcoreRedeploy.MOD_ID, "request_revive");
+	public static final ResourceLocation SEND_REVIVE = new ResourceLocation(HardcoreRedeploy.MOD_ID, "send_revive");
+	public static final ResourceLocation SYNC_CONFIG = new ResourceLocation(HardcoreRedeploy.MOD_ID, "sync_config");
 
 	private static final ItemStack firework;
 	static {
-		firework = new ItemStack(Registries.ITEM.get(new Identifier("minecraft", "firework_rocket")));
-		NbtCompound nbt = new NbtCompound();
+		firework = new ItemStack(BuiltInRegistries.ITEM.get(new ResourceLocation("minecraft", "firework_rocket")));
+		CompoundTag nbt = new CompoundTag();
 		nbt.putByte("Flight", (byte)3);
-		firework.setSubNbt("Fireworks", nbt);
+		firework.addTagElement("Fireworks", nbt);
 	}
 
 
@@ -75,32 +75,32 @@ public class HardcoreRedeploy implements ModInitializer {
 		GeckoLib.initialize();
 
 		ServerPlayNetworking.registerGlobalReceiver(REQUEST_REVIVE, (server, player, handler, buf, responseSender) -> {
-			UUID uuid = buf.readUuid();
+			UUID uuid = buf.readUUID();
 			BlockPos blockPos = buf.readBlockPos();
 
 			server.execute(() -> {
-				ServerPlayerEntity spectator = server.getPlayerManager().getPlayer(uuid);
+				ServerPlayer spectator = server.getPlayerList().getPlayer(uuid);
 				if (spectator == null) return;
 
-				BlockState invokingBlock = player.getWorld().getBlockState(blockPos);
+				BlockState invokingBlock = player.level().getBlockState(blockPos);
 
-				if (invokingBlock.getBlock() instanceof BuyStation && player.getPos().isInRange(blockPos.toCenterPos(), 5)) {
+				if (invokingBlock.getBlock() instanceof BuyStation && player.position().closerThan(blockPos.getCenter(), 5)) {
 
 					int cost = config.baseCost + config.additiveCost * RedeployStateSaver.getPlayerState(spectator).timesRevived;
-					boolean isCreative = player.interactionManager.getGameMode() == GameMode.CREATIVE;
+					boolean isCreative = player.gameMode.getGameModeForPlayer() == GameType.CREATIVE;
 					if (!isCreative && player.experienceLevel < cost) return;
 
-					Vec3d fireworkPos = blockPos.toCenterPos();
-					BlockState blockState = player.getWorld().getBlockState(blockPos);
-					Direction offset = blockState.get(HorizontalFacingBlock.FACING).rotateYClockwise();
-					if (blockState.get(BUY_STATION_PART) == BuyStation.BuyStationPart.AUX)
+					Vec3 fireworkPos = blockPos.getCenter();
+					BlockState blockState = player.level().getBlockState(blockPos);
+					Direction offset = blockState.getValue(HorizontalDirectionalBlock.FACING).getClockWise();
+					if (blockState.getValue(BUY_STATION_PART) == BuyStation.BuyStationPart.AUX)
 						offset = offset.getOpposite();
-					FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(player.getWorld(), fireworkPos.x + offset.getOffsetX() / 2., fireworkPos.y, fireworkPos.z + offset.getOffsetZ() / 2., firework);
-					player.getWorld().spawnEntity(fireworkRocketEntity);
+					FireworkRocketEntity fireworkRocketEntity = new FireworkRocketEntity(player.level(), fireworkPos.x + offset.getStepX() / 2., fireworkPos.y, fireworkPos.z + offset.getStepZ() / 2., firework);
+					player.level().addFreshEntity(fireworkRocketEntity);
 
-					if (!isCreative) player.setExperienceLevel(player.experienceLevel - cost);
+					if (!isCreative) player.setExperienceLevels(player.experienceLevel - cost);
 					((TimerAccess) server).hardcoreredeploy_redeployInTicks(spectator, player, 60L);
-					PacketByteBuf buf1 = PacketByteBufs.create();
+					FriendlyByteBuf buf1 = PacketByteBufs.create();
 					ServerPlayNetworking.send(spectator, SEND_REVIVE, buf1);
 				}
 			});
@@ -114,18 +114,18 @@ public class HardcoreRedeploy implements ModInitializer {
 			});
 		});
 
-		BUY_STATION_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE,
-				new Identifier(HardcoreRedeploy.MOD_ID, "buy_station_entity"),
+		BUY_STATION_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
+				new ResourceLocation(HardcoreRedeploy.MOD_ID, "buy_station_entity"),
 				FabricBlockEntityTypeBuilder.create(BuyStationEntity::new,
 						HardcoreRedeploy.BUY_STATION).build());
-		Registry.register(Registries.STATUS_EFFECT, new Identifier(HardcoreRedeploy.MOD_ID, "redeploying"), REDEPLOYING);
+		Registry.register(BuiltInRegistries.MOB_EFFECT, new ResourceLocation(HardcoreRedeploy.MOD_ID, "redeploying"), REDEPLOYING);
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> RedeployPlayerCommand.register(dispatcher));
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> SetRevivesCommand.register(dispatcher));
-		Registry.register(Registries.SOUND_EVENT, BUY_STATION_SOUND_ID, BUY_STATION_SOUND_EVENT);
+		Registry.register(BuiltInRegistries.SOUND_EVENT, BUY_STATION_SOUND_ID, BUY_STATION_SOUND_EVENT);
 	}
 
-	public static void syncConfig(MinecraftServer server, ServerPlayerEntity receiver) {
-		PacketByteBuf buf = PacketByteBufs.create();
+	public static void syncConfig(MinecraftServer server, ServerPlayer receiver) {
+		FriendlyByteBuf buf = PacketByteBufs.create();
 		buf.writeInt(HardcoreRedeployConfigHandler.config.baseCost);
 		buf.writeInt(HardcoreRedeployConfigHandler.config.additiveCost);
 		server.execute(() -> {
@@ -133,10 +133,10 @@ public class HardcoreRedeploy implements ModInitializer {
 		});
 	}
 
-	public static void syncRevives(MinecraftServer server, ServerPlayerEntity receiver, UUID uuid) {
+	public static void syncRevives(MinecraftServer server, ServerPlayer receiver, UUID uuid) {
 		PlayerData playerData = RedeployStateSaver.getPlayerState(server, uuid);
-		PacketByteBuf buf = PacketByteBufs.create();
-		buf.writeUuid(uuid);
+		FriendlyByteBuf buf = PacketByteBufs.create();
+		buf.writeUUID(uuid);
 		buf.writeInt(playerData.timesRevived);
 		server.execute(() -> {
 			ServerPlayNetworking.send(receiver, SEND_REVIVES_UPDATE, buf);

@@ -2,7 +2,7 @@ package net.touhoudiscord.item.client;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.touhoudiscord.HardcoreRedeploy;
 import net.touhoudiscord.item.BuyStationItem;
 import software.bernie.geckolib.model.GeoModel;
@@ -10,17 +10,17 @@ import software.bernie.geckolib.model.GeoModel;
 @Environment(EnvType.CLIENT)
 public class BuyStationItemModel extends GeoModel<BuyStationItem> {
     @Override
-    public Identifier getModelResource(BuyStationItem animatable) {
-        return new Identifier(HardcoreRedeploy.MOD_ID, "geo/buy_station.geo.json");
+    public ResourceLocation getModelResource(BuyStationItem animatable) {
+        return new ResourceLocation(HardcoreRedeploy.MOD_ID, "geo/buy_station.geo.json");
     }
 
     @Override
-    public Identifier getTextureResource(BuyStationItem animatable) {
-        return new Identifier(HardcoreRedeploy.MOD_ID, "textures/block/buy_station.png");
+    public ResourceLocation getTextureResource(BuyStationItem animatable) {
+        return new ResourceLocation(HardcoreRedeploy.MOD_ID, "textures/block/buy_station.png");
     }
 
     @Override
-    public Identifier getAnimationResource(BuyStationItem animatable) {
-        return new Identifier(HardcoreRedeploy.MOD_ID, "animations/buy_station.animation.json");
+    public ResourceLocation getAnimationResource(BuyStationItem animatable) {
+        return new ResourceLocation(HardcoreRedeploy.MOD_ID, "animations/buy_station.animation.json");
     }
 }

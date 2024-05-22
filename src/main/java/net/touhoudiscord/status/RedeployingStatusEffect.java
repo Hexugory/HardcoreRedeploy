@@ -1,10 +1,10 @@
 package net.touhoudiscord.status;
 
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectCategory;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 
-public class RedeployingStatusEffect extends StatusEffect {
+public class RedeployingStatusEffect extends MobEffect {
     public RedeployingStatusEffect() {
-        super(StatusEffectCategory.BENEFICIAL, 0xFFFFFF);
+        super(MobEffectCategory.BENEFICIAL, 0xFFFFFF);
     }
 }

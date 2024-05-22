@@ -1,87 +1,93 @@
 package net.touhoudiscord.block;
 
-import net.minecraft.block.*;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.EnumProperty;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.StringIdentifiable;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldEvents;
-import net.minecraft.world.WorldView;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.LevelEvent;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.touhoudiscord.BuyStationCapable;
 import org.jetbrains.annotations.Nullable;
 
-public class BuyStation extends BlockWithEntity {
-    public static final EnumProperty<BuyStationPart> BUY_STATION_PART = EnumProperty.of("part", BuyStationPart.class);
+public class BuyStation extends BaseEntityBlock {
+    public static final EnumProperty<BuyStationPart> BUY_STATION_PART = EnumProperty.create("part", BuyStationPart.class);
 
-    protected static final VoxelShape NORTH_SHAPE = Block.createCuboidShape(1.0, 0.0, 1.0, 16.0, 12.0, 15.0);
-    protected static final VoxelShape SOUTH_SHAPE = Block.createCuboidShape(0.0, 0.0, 1.0, 15.0, 12.0, 15.0);
-    protected static final VoxelShape WEST_SHAPE = Block.createCuboidShape(1.0, 0.0, 0.0, 15.0, 12.0, 15.0);
-    protected static final VoxelShape EAST_SHAPE = Block.createCuboidShape(1.0, 0.0, 1.0, 15.0, 12.0, 16.0);
+    protected static final VoxelShape NORTH_SHAPE = Block.box(1.0, 0.0, 1.0, 16.0, 12.0, 15.0);
+    protected static final VoxelShape SOUTH_SHAPE = Block.box(0.0, 0.0, 1.0, 15.0, 12.0, 15.0);
+    protected static final VoxelShape WEST_SHAPE = Block.box(1.0, 0.0, 0.0, 15.0, 12.0, 15.0);
+    protected static final VoxelShape EAST_SHAPE = Block.box(1.0, 0.0, 1.0, 15.0, 12.0, 16.0);
 
-    public BuyStation(Settings settings) {
+    public BuyStation(Properties settings) {
         super(settings);
-        this.setDefaultState(this.getDefaultState()
-                .with(HorizontalFacingBlock.FACING, Direction.NORTH)
-                .with(BUY_STATION_PART, BuyStationPart.MAIN));
+        this.registerDefaultState(this.defaultBlockState()
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
+                .setValue(BUY_STATION_PART, BuyStationPart.MAIN));
     }
 
     @Nullable
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return this.getDefaultState().with(HorizontalFacingBlock.FACING, ctx.getHorizontalPlayerFacing());
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        return this.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, ctx.getHorizontalDirection());
     }
 
     @Override
-    public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
-        super.onPlaced(world, pos, state, placer, itemStack);
-        if (!world.isClient) {
-            BlockPos blockPos = pos.offset(state.get(HorizontalFacingBlock.FACING).rotateYClockwise());
-            world.setBlockState(blockPos, state.with(BUY_STATION_PART, BuyStationPart.AUX), Block.NOTIFY_ALL);
-            world.updateNeighbors(pos, Blocks.AIR);
-            state.updateNeighbors(world, pos, Block.NOTIFY_ALL);
+    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
+        super.setPlacedBy(world, pos, state, placer, itemStack);
+        if (!world.isClientSide) {
+            BlockPos blockPos = pos.relative(state.getValue(HorizontalDirectionalBlock.FACING).getClockWise());
+            world.setBlock(blockPos, state.setValue(BUY_STATION_PART, BuyStationPart.AUX), Block.UPDATE_ALL);
+            world.blockUpdated(pos, Blocks.AIR);
+            state.updateNeighbourShapes(world, pos, Block.UPDATE_ALL);
         }
     }
 
     @Override
-    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (world.isClient()) {
-            super.onBreak(world, pos, state, player);
+    public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+        if (world.isClientSide()) {
+            super.playerWillDestroy(world, pos, state, player);
         }
 
-        BuyStationPart part = state.get(BUY_STATION_PART);
+        BuyStationPart part = state.getValue(BUY_STATION_PART);
         if (part == BuyStationPart.MAIN) {
-            BlockPos otherpos = pos.offset(state.get(HorizontalFacingBlock.FACING).rotateYClockwise());
+            BlockPos otherpos = pos.relative(state.getValue(HorizontalDirectionalBlock.FACING).getClockWise());
             BlockState otherstate = world.getBlockState(otherpos);
             if (otherstate.getBlock() == this) {
-                world.setBlockState(otherpos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
-                world.syncWorldEvent(player, WorldEvents.BLOCK_BROKEN, otherpos, Block.getRawIdFromState(otherstate));
+                world.setBlock(otherpos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                world.levelEvent(player, LevelEvent.PARTICLES_DESTROY_BLOCK, otherpos, Block.getId(otherstate));
             }
         }
         else if (part == BuyStationPart.AUX) {
-            BlockPos otherpos = pos.offset(state.get(HorizontalFacingBlock.FACING).rotateYCounterclockwise());
+            BlockPos otherpos = pos.relative(state.getValue(HorizontalDirectionalBlock.FACING).getCounterClockWise());
             BlockState otherstate = world.getBlockState(otherpos);
             if (otherstate.getBlock() == this) {
-                world.setBlockState(otherpos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
-                world.syncWorldEvent(player, WorldEvents.BLOCK_BROKEN, otherpos, Block.getRawIdFromState(otherstate));
+                world.setBlock(otherpos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                world.levelEvent(player, LevelEvent.PARTICLES_DESTROY_BLOCK, otherpos, Block.getId(otherstate));
             }
         }
     }
 
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
-        Direction direction = state.get(HorizontalFacingBlock.FACING);
-        BuyStationPart part = state.get(BUY_STATION_PART);
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        Direction direction = state.getValue(HorizontalDirectionalBlock.FACING);
+        BuyStationPart part = state.getValue(BUY_STATION_PART);
         if (part == BuyStationPart.AUX) direction = direction.getOpposite();
         return switch (direction) {
             default -> NORTH_SHAPE;
@@ -92,38 +98,38 @@ public class BuyStation extends BlockWithEntity {
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         Block block = world.getBlockState(pos).getBlock();
         if (block instanceof BuyStation) {
             ((BuyStationCapable) player).hardcoreredeploy_openBuyStationScreen(pos);
-            return ActionResult.success(world.isClient);
+            return InteractionResult.sidedSuccess(world.isClientSide);
         } else {
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         }
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        builder.add(HorizontalFacingBlock.FACING, BUY_STATION_PART);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(HorizontalDirectionalBlock.FACING, BUY_STATION_PART);
     }
 
     @Nullable
     @Override
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
-        return state.get(BUY_STATION_PART) == BuyStationPart.MAIN ? new BuyStationEntity(pos, state) : null;
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return state.getValue(BUY_STATION_PART) == BuyStationPart.MAIN ? new BuyStationEntity(pos, state) : null;
     }
 
     @Override
-    public BlockRenderType getRenderType(BlockState state) {
-        return state.get(BUY_STATION_PART) == BuyStationPart.MAIN ? BlockRenderType.MODEL : BlockRenderType.INVISIBLE;
+    public RenderShape getRenderShape(BlockState state) {
+        return state.getValue(BUY_STATION_PART) == BuyStationPart.MAIN ? RenderShape.MODEL : RenderShape.INVISIBLE;
     }
 
     @Override
-    public boolean canPlaceAt(BlockState state, WorldView world, BlockPos pos) {
-        return world.getBlockState(pos.offset(state.get(HorizontalFacingBlock.FACING).rotateYClockwise())).isReplaceable() && super.canPlaceAt(state, world, pos);
+    public boolean canSurvive(BlockState state, LevelReader world, BlockPos pos) {
+        return world.getBlockState(pos.relative(state.getValue(HorizontalDirectionalBlock.FACING).getClockWise())).canBeReplaced() && super.canSurvive(state, world, pos);
     }
 
-    public enum BuyStationPart implements StringIdentifiable {
+    public enum BuyStationPart implements StringRepresentable {
         MAIN("main"),
         AUX("aux");
 
@@ -137,7 +143,7 @@ public class BuyStation extends BlockWithEntity {
             return this.name;
         }
 
-        public String asString() {
+        public String getSerializedName() {
             return this.name;
         }
     }

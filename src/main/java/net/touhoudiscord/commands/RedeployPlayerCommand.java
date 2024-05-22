@@ -1,28 +1,28 @@
 package net.touhoudiscord.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
-import net.minecraft.command.CommandSource;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.server.PlayerManager;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.world.GameMode;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.level.GameType;
 import net.touhoudiscord.RedeployPlayer;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public class RedeployPlayerCommand {
 
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(literal("redeployplayer")
-        .requires(source -> source.hasPermissionLevel(4))
-        .then(argument("player", EntityArgumentType.player())
+        .requires(source -> source.hasPermission(4))
+        .then(argument("player", EntityArgument.player())
         .suggests((context, builder) -> {
-            PlayerManager playerManager = (context.getSource()).getServer().getPlayerManager();
-            return CommandSource.suggestMatching(playerManager.getPlayerList().stream().filter(
-                (player) -> player.interactionManager.getGameMode() == GameMode.SPECTATOR
+            PlayerList playerManager = (context.getSource()).getServer().getPlayerList();
+            return SharedSuggestionProvider.suggest(playerManager.getPlayers().stream().filter(
+                (player) -> player.gameMode.getGameModeForPlayer() == GameType.SPECTATOR
             ).map(
                 (player) -> player.getGameProfile().getName()
             ), builder);
@@ -30,9 +30,9 @@ public class RedeployPlayerCommand {
         .executes(context -> {
             if (context.getSource().getPlayer() == null) return 0;
 
-            ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+            ServerPlayer player = EntityArgument.getPlayer(context, "player");
             RedeployPlayer.redeploy(player, context.getSource().getPlayer());
-            context.getSource().sendFeedback(() -> Text.literal("Redeployed ").append(player.getName()), true);
+            context.getSource().sendSuccess(() -> Component.literal("Redeployed ").append(player.getName()), true);
 
             return 1;
         })));

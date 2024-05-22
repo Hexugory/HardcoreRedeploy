@@ -1,20 +1,20 @@
 package net.touhoudiscord.mixin;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.touhoudiscord.BuyStationCapable;
 import net.touhoudiscord.screen.BuyStationScreen;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(ClientPlayerEntity.class)
+@Mixin(LocalPlayer.class)
 public class ClientBuyStationScreenMixin implements BuyStationCapable {
-    @Shadow @Final protected MinecraftClient client;
+    @Shadow @Final protected Minecraft minecraft;
 
     @Override
     public void hardcoreredeploy_openBuyStationScreen(BlockPos blockPos) {
-        this.client.setScreen(new BuyStationScreen(blockPos));
+        this.minecraft.setScreen(new BuyStationScreen(blockPos));
     }
 }

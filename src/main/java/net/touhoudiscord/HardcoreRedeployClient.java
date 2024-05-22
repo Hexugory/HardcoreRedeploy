@@ -4,7 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.touhoudiscord.HardcoreRedeployConfigHandler.HardcoreRedeployConfig;
 import net.touhoudiscord.block.client.BuyStationRenderer;
 import net.touhoudiscord.screen.RedeployingScreen;
@@ -20,10 +20,10 @@ public class HardcoreRedeployClient implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		BlockEntityRendererFactories.register(HardcoreRedeploy.BUY_STATION_ENTITY, BuyStationRenderer::new);
+		BlockEntityRenderers.register(HardcoreRedeploy.BUY_STATION_ENTITY, BuyStationRenderer::new);
 
 		ClientPlayNetworking.registerGlobalReceiver(HardcoreRedeploy.SEND_REVIVES_UPDATE, (client, handler, buf, responseSender) -> {
-			UUID uuid = buf.readUuid();
+			UUID uuid = buf.readUUID();
 			int revives = buf.readInt();
 			client.execute(() -> {
 				reviveMap.put(uuid, revives);

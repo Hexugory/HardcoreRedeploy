@@ -1,7 +1,7 @@
 package net.touhoudiscord;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
 
 public interface TimerAccess {
-    void hardcoreredeploy_redeployInTicks(ServerPlayerEntity spectator, ServerPlayerEntity target, Long ticks);
+    void hardcoreredeploy_redeployInTicks(ServerPlayer spectator, ServerPlayer target, Long ticks);
 }

@@ -1,8 +1,8 @@
 package net.touhoudiscord.mixin;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.touhoudiscord.PlayerTimer;
 import net.touhoudiscord.RedeployPlayer;
 import net.touhoudiscord.TimerAccess;
@@ -18,24 +18,24 @@ import java.util.UUID;
 
 @Mixin(MinecraftServer.class)
 public abstract class RedeployTimerMixin implements TimerAccess {
-    @Shadow public abstract PlayerManager getPlayerManager();
+    @Shadow public abstract PlayerList getPlayerList();
 
     @Unique
     private final HashMap<UUID, PlayerTimer> playerTimers = new HashMap<>();
 
-    @Inject(method = "tick", at = @At("TAIL"))
+    @Inject(method = "tickServer", at = @At("TAIL"))
     private void onTick(CallbackInfo ci) {
         this.playerTimers.forEach((uuid, timer) -> {
             if (--timer.ticks == 0L) {
-                ServerPlayerEntity spectator = this.getPlayerManager().getPlayer(uuid);
-                ServerPlayerEntity target = this.getPlayerManager().getPlayer(timer.target);
+                ServerPlayer spectator = this.getPlayerList().getPlayer(uuid);
+                ServerPlayer target = this.getPlayerList().getPlayer(timer.target);
                 if (spectator != null && target != null) RedeployPlayer.redeploy(spectator, target);
             }
         });
     }
 
     @Override
-    public void hardcoreredeploy_redeployInTicks(ServerPlayerEntity spectator, ServerPlayerEntity target, Long ticks) {
-        this.playerTimers.put(spectator.getUuid(), new PlayerTimer(target.getUuid(), ticks));
+    public void hardcoreredeploy_redeployInTicks(ServerPlayer spectator, ServerPlayer target, Long ticks) {
+        this.playerTimers.put(spectator.getUUID(), new PlayerTimer(target.getUUID(), ticks));
     }
 }
